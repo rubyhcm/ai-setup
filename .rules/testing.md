@@ -1,20 +1,23 @@
-# Testing Rules - Go Backend
+
+# Testing Rules — Go Backend
 
 ## Table-Driven Tests (MANDATORY)
+
+All tests MUST use table-driven format with `t.Run()`:
 
 ```go
 func TestUserService_GetByID(t *testing.T) {
     tests := []struct {
         name    string
         id      string
-        setup   func(*mockUserRepo)  // setup mocks
+        setup   func(*MockUserRepository)
         want    *domain.User
         wantErr error
     }{
         {
             name: "success - user found",
             id:   "user-123",
-            setup: func(m *mockUserRepo) {
+            setup: func(m *MockUserRepository) {
                 m.EXPECT().FindByID(gomock.Any(), "user-123").
                     Return(&domain.User{ID: "user-123", Name: "John"}, nil)
             },
@@ -24,7 +27,7 @@ func TestUserService_GetByID(t *testing.T) {
         {
             name: "error - user not found",
             id:   "user-999",
-            setup: func(m *mockUserRepo) {
+            setup: func(m *MockUserRepository) {
                 m.EXPECT().FindByID(gomock.Any(), "user-999").
                     Return(nil, domain.ErrNotFound)
             },
@@ -32,11 +35,11 @@ func TestUserService_GetByID(t *testing.T) {
             wantErr: domain.ErrNotFound,
         },
         {
-            name: "error - empty id",
-            id:   "",
-            setup: func(m *mockUserRepo) {},
+            name:    "error - empty id",
+            id:      "",
+            setup:   func(m *MockUserRepository) {},
             want:    nil,
-            wantErr: domain.ErrInvalid,
+            wantErr: domain.ErrInvalidInput,
         },
     }
 
@@ -45,13 +48,13 @@ func TestUserService_GetByID(t *testing.T) {
             ctrl := gomock.NewController(t)
             defer ctrl.Finish()
 
-            repo := NewMockUserRepo(ctrl)
+            repo := NewMockUserRepository(ctrl)
             tt.setup(repo)
 
-            svc := service.NewUserService(repo)
+            svc := service.NewUserService(repo, zaptest.NewLogger(t))
             got, err := svc.GetByID(context.Background(), tt.id)
 
-            // REQUIRED: assert error
+            // REQUIRED: always assert error
             if tt.wantErr != nil {
                 require.Error(t, err)
                 assert.ErrorIs(t, err, tt.wantErr)
@@ -59,7 +62,7 @@ func TestUserService_GetByID(t *testing.T) {
             }
             require.NoError(t, err)
 
-            // REQUIRED: assert return value
+            // REQUIRED: always assert return value
             assert.Equal(t, tt.want.ID, got.ID)
             assert.Equal(t, tt.want.Name, got.Name)
         })
@@ -70,108 +73,48 @@ func TestUserService_GetByID(t *testing.T) {
 ## Assertion Rules (ANTI COVERAGE TRAP)
 
 ```
-MANDATORY: Every test case MUST have assert/require:
+MANDATORY: Every test case MUST have assertions:
   - assert returned value (NEVER just call function and ignore result)
-  - assert error (wantErr true → require.Error, false → require.NoError)
-  - assert state changes (if side effects exist, verify mock expectations)
+  - assert error (wantErr → require.Error + assert.ErrorIs, no error → require.NoError)
+  - assert state changes (if side effects, verify mock expectations)
 
 FORBIDDEN: Test that only calls a function without any assertion
-FORBIDDEN: Test with empty assertions (assert.True(t, true))
+FORBIDDEN: Empty assertions: assert.True(t, true)
 FORBIDDEN: Test that does not check error return
 FORBIDDEN: Mock returning a value that is never verified
 
-Example NOT ACCEPTED:
-  func TestBad(t *testing.T) {
-      svc := NewService(repo)
-      svc.Process(ctx, input) // <-- no assertion = coverage trap
-  }
+// NOT ACCEPTED:
+func TestBad(t *testing.T) {
+    svc := NewService(repo)
+    svc.Process(ctx, input) // no assertion = coverage trap
+}
 ```
 
 ## Mocking
 
-```
-REQUIRED: gomock for interface mocking
-REQUIRED: testify/assert + testify/require for assertions
-OPTIONAL: testify/mock when flexibility is needed
-REQUIRED: Mock EXPECTATIONS must be verified
+```go
+// REQUIRED: gomock for interface mocking
+// REQUIRED: testify/assert + testify/require for assertions
 
-// Generate mocks
-//go:generate mockgen -source=user_service.go -destination=mock_user_repo_test.go -package=service
+// Add generate directive in the source file:
+//go:generate mockgen -source=user_service.go -destination=mock_user_repository_test.go -package=service_test
 
-// Mock setup pattern
+// Mock setup pattern:
 ctrl := gomock.NewController(t)
-defer ctrl.Finish()  // verify all expectations
-repo := NewMockUserRepo(ctrl)
+defer ctrl.Finish()  // verifies all expectations were met
+
+repo := NewMockUserRepository(ctrl)
+repo.EXPECT().FindByID(gomock.Any(), "user-123").Return(user, nil).Times(1)
 ```
 
 ## Test File Placement
 
 ```
-Unit tests:        internal/service/user_service_test.go     (same package)
-Handler tests:     internal/handler/user_handler_test.go      (same package)
-Integration tests: tests/integration/user_test.go             (separate dir)
-Test helpers:      internal/testutil/helpers.go               (shared test utils)
-Test fixtures:     testdata/                                  (test data files)
-```
-
-## Integration Tests
-
-```
-REQUIRED: Build tag //go:build integration
-REQUIRED: testcontainers-go for DB/Redis/Kafka
-REQUIRED: Clean state before each test (truncate tables)
-REQUIRED: Separate from unit tests
-
-// Run unit tests only
-go test ./...
-
-// Run integration tests
-go test -tags=integration ./tests/integration/...
-
-Example:
-  //go:build integration
-
-  func TestUserRepo_Integration(t *testing.T) {
-      ctx := context.Background()
-
-      // Start postgres container
-      pg, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-          ContainerRequest: testcontainers.ContainerRequest{
-              Image:        "postgres:16-alpine",
-              ExposedPorts: []string{"5432/tcp"},
-              Env: map[string]string{
-                  "POSTGRES_PASSWORD": "test",
-                  "POSTGRES_DB":       "testdb",
-              },
-              WaitingFor: wait.ForListeningPort("5432/tcp"),
-          },
-          Started: true,
-      })
-      require.NoError(t, err)
-      defer pg.Terminate(ctx)
-
-      // Run tests against real DB
-      dsn := fmt.Sprintf("postgres://postgres:test@%s/testdb?sslmode=disable", pg.Endpoint(ctx, ""))
-      repo := repository.NewPostgresUserRepo(mustConnect(dsn))
-
-      // ... test cases
-  }
-```
-
-## Coverage Policy
-
-```
-Minimum coverage targets:
-  domain/:     90%  (pure business logic, easy to test)
-  service/:    85%  (use cases, mock dependencies)
-  handler/:    80%  (HTTP handlers, request/response)
-  repository/: 70%  (external deps, use integration tests)
-  Critical paths (auth, payment): 95%
-
-Overall project minimum: 80%
-
-IMPORTANT: Coverage % is a guideline, not a goal.
-Quality of assertions matters MORE than coverage number.
+Unit tests:        internal/service/user_service_test.go      (same package: package service_test)
+Handler tests:     internal/handler/user_handler_test.go       (same package: package handler_test)
+Integration tests: tests/integration/user_test.go              (build tag: //go:build integration)
+Test helpers:      internal/testutil/helpers.go                (shared test utilities)
+Test fixtures:     testdata/                                   (JSON, SQL, YAML test data)
 ```
 
 ## Test Naming Convention
@@ -182,16 +125,70 @@ Format: Test<Struct>_<Method>/<scenario>
 Examples:
   TestUserService_GetByID/success
   TestUserService_GetByID/not_found
+  TestUserService_GetByID/empty_id
   TestUserService_Create/invalid_email
   TestUserHandler_Create/unauthorized
+  TestUserHandler_Create/success
 ```
 
-## Race Detection
+## Integration Tests (Testcontainers)
+
+```go
+//go:build integration
+
+package integration_test
+
+func TestUserRepo_Integration(t *testing.T) {
+    ctx := context.Background()
+
+    // Start real postgres container
+    pg, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+        ContainerRequest: testcontainers.ContainerRequest{
+            Image:        "postgres:16-alpine",
+            ExposedPorts: []string{"5432/tcp"},
+            Env: map[string]string{
+                "POSTGRES_PASSWORD": "test",
+                "POSTGRES_DB":       "testdb",
+            },
+            WaitingFor: wait.ForListeningPort("5432/tcp"),
+        },
+        Started: true,
+    })
+    require.NoError(t, err)
+    defer pg.Terminate(ctx)
+
+    // Run tests against real DB
+    host, _ := pg.Host(ctx)
+    port, _ := pg.MappedPort(ctx, "5432")
+    dsn := fmt.Sprintf("postgres://postgres:test@%s:%s/testdb?sslmode=disable", host, port.Port())
+
+    db := mustConnect(t, dsn)
+    repo := repository.NewPostgresUserRepo(db)
+
+    // Clean state before each test
+    t.Cleanup(func() { db.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE") })
+
+    // Test cases...
+}
+
+// Run:
+// go test -tags=integration ./tests/integration/...
+```
+
+## Coverage Policy (Hard Gates)
 
 ```
-REQUIRED: Run go test -race in CI
-REQUIRED: Run go test -race locally before commit for concurrent code
-REQUIRED: Fix ALL race conditions (zero tolerance)
+domain/:     90%  — pure business logic, easy to test, no excuses
+service/:    85%  — use cases with mocked dependencies
+handler/:    80%  — request/response handling
+repository/: 70%  — external deps, supplement with integration tests
+Critical paths (auth, payment): 95%
+
+Overall project minimum: 80% HARD GATE
+  → Review FAILS and code must not be merged if below 80%
+
+IMPORTANT: Coverage % is a guideline, not the goal.
+Quality of assertions matters MORE than coverage number.
 ```
 
 ## gRPC Handler Testing
@@ -259,20 +256,37 @@ func TestUserServer_Create(t *testing.T) {
 }
 ```
 
-## Benchmark Tests
+## Race Detection
 
+```bash
+# REQUIRED: Run with race detector in CI
+go test -race ./...
+
+# REQUIRED: Run locally before commit for any concurrent code
+go test -race ./internal/...
+
+# ZERO tolerance for race conditions
 ```
-OPTIONAL but recommended for hot paths:
 
-func BenchmarkUserService_GetByID(b *testing.B) {
-    svc := setupService()
-    ctx := context.Background()
+## Running Tests
 
-    b.ResetTimer()
-    for i := 0; i < b.N; i++ {
-        svc.GetByID(ctx, "user-123")
-    }
-}
+```bash
+# Unit tests
+go test ./...
 
-// Run: go test -bench=. -benchmem ./internal/service/...
+# With coverage
+go test ./... -coverprofile=coverage.out
+go tool cover -func=coverage.out | grep total
+
+# Race detection
+go test -race ./...
+
+# Integration tests only
+go test -tags=integration ./tests/integration/...
+
+# Specific test
+go test -run TestUserService_GetByID ./internal/service/...
+
+# Verbose output
+go test -v -run TestUserService ./internal/service/...
 ```

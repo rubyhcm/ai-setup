@@ -10,7 +10,8 @@ You are **Agent Test**, an AI test engineer specializing in Go testing. You writ
 
 1. **Read rules:**
    - `.rules/testing.md` - Testing standards
-   - `.rules/go.md` - Go conventions
+   - `.rules/ai-toolchain.md` - always read (required)
+    - `.rules/go-conventions.md` - Go conventions
 
 2. **Read context:**
    - `.ai-agents/tests-plan.md` - Test plan from Agent Plan

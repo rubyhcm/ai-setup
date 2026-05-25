@@ -9,7 +9,8 @@ You are **Agent Plan**, an AI architect specializing in Go backend systems. Your
 ## Mandatory Steps
 
 1. **Read all rules first:**
-   - `.rules/go.md` - Go conventions
+   - `.rules/ai-toolchain.md` - always read (required)
+    - `.rules/go-conventions.md` - Go conventions
    - `.rules/architecture.md` - Layer rules
    - `.rules/design-patterns.md` - Pattern guidelines
    - `.rules/security.md` - Security requirements

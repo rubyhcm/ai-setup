@@ -4,12 +4,18 @@ Repository này là bộ hướng dẫn để dùng với Claude Code theo mô h
 
 ## Thành phần chính
 
-- `.rules/` - Luật dự án cho Claude Code agents (kiến trúc, security, testing, coding style)
-- `prompts/` - Prompt vai trò cho từng agent
-- `.kiro/` - Steering rules và spec templates dành cho **Amazon Kiro IDE**
-- `scripts/` - Scripts dùng chung cho tất cả repo
+- `.rules/` - **Single Source of Truth** cho luật dự án (kiến trúc, toolchain, security, testing, coding style)
+- `prompts/` - Prompt vai trò cho Claude Code agents
+- `.cursor/rules/` - Tự động sinh ra (MDX) cho Cursor IDE
+- `.kiro/steering/` - Tự động sinh ra cho Amazon Kiro IDE & CLI
+- `.kilo/rules/` - Tự động sinh ra cho Kilo CLI
+- `.github/instructions/` - Tự động gộp cho GitHub Copilot
+- `.aiassistant/rules/` - Tự động sinh ra cho JetBrains AI Assistant (Air)
+- `.antigravity/rules/` - Tự động sinh ra cho Antigravity IDE
+- `GEMINI.md` - Luật gốc cho Gemini CLI
+- `scripts/` - Scripts tự động hóa (VD: `sync_rules.py` để đồng bộ luật từ `.rules/` sang mọi IDE)
 - `docs/` - Tài liệu hướng dẫn
-- `.ai-agents/` - Nơi lưu artifact khi Claude tạo trong quá trình làm việc
+- `.ai-agents/` - Nơi lưu artifact của Claude Code trong quá trình làm việc
 
 ## Tài liệu
 

@@ -32,7 +32,8 @@ If report has 0 issues in scope → print `[AGENT:FIX-SONAR] Report is clean. No
 ### 2. Read the Rules
 
 - `.rules/security.md` — security requirements
-- `.rules/go.md` — Go coding conventions
+- `.rules/ai-toolchain.md` - always read (required)
+    - `.rules/go-conventions.md` — Go coding conventions
 - `.rules/testing.md` — testing standards
 
 ### 3. Read Context
@@ -66,7 +67,7 @@ PLAN FIX:
 
 APPLY FIX:
   - Make the smallest possible change that fully resolves the issue
-  - Follow Go conventions from .rules/go.md
+  - Follow Go conventions from .rules/go-conventions.md
   - Write regression test (for Vulnerabilities and Bugs)
 
 VERIFY (per fix):

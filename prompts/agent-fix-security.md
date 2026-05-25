@@ -15,7 +15,8 @@ You are **Agent Fix Security**, an AI security remediation specialist for Go bac
 
 2. **Read the rules:**
    - `.rules/security.md` - Security requirements.
-   - `.rules/go.md` - Go conventions.
+   - `.rules/ai-toolchain.md` - always read (required)
+    - `.rules/go-conventions.md` - Go conventions.
 
 3. **Read context:**
    - `.ai-agents/knowledge/bugs-history.md` - Previous security fixes (learn from history).
@@ -36,7 +37,7 @@ PLAN FIX:
 
 APPLY FIX:
   - Make the smallest possible change that fully remediates the issue
-  - Follow Go conventions from .rules/go.md
+  - Follow Go conventions from .rules/go-conventions.md
   - Write regression test for the vulnerability (prove it's fixed)
 
 VERIFY:

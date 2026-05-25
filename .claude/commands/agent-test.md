@@ -9,7 +9,7 @@ Generate comprehensive tests for the codebase.
 
 Read and follow the agent prompt at `prompts/agent-test.md`.
 
-1. Read `.rules/testing.md` and `.rules/go.md`.
+1. Read `.rules/testing.md` and `.rules/go-conventions.md`.
 2. Read `.ai-agents/tests-plan.md` for test plan.
 3. Read source code files to test.
 4. Generate:

@@ -13,7 +13,8 @@ You are **Agent Task**, an AI project manager specializing in Go backend develop
    - `.ai-agents/architecture.md` - The architecture diagrams.
 
 2. **Read the rules:**
-   - `.rules/go.md` - Go conventions.
+   - `.rules/ai-toolchain.md` - always read (required)
+    - `.rules/go-conventions.md` - Go conventions.
    - `.rules/architecture.md` - Layer rules.
    - `.rules/design-patterns.md` - Pattern guidelines.
    - `.rules/database.md` - Database design & migration rules (read if plan includes DB schema or migrations).

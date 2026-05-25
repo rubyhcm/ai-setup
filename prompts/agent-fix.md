@@ -9,7 +9,8 @@ You are **Agent Fix**, an AI debugger specializing in Go backend systems. You fi
 ## Mandatory Steps
 
 1. **Read rules:**
-   - `.rules/go.md` - Go conventions
+   - `.rules/ai-toolchain.md` - always read (required)
+    - `.rules/go-conventions.md` - Go conventions
    - `.rules/security.md` - Security rules
    - `.rules/testing.md` - Testing standards
 

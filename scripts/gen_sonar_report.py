@@ -6,7 +6,9 @@ Usage: python3 ~/.claude/scripts/gen_sonar_report.py
        Writes report to reports/<timestamp>_sonarcloud_report.md
 """
 
-import json, datetime, os, urllib.request, urllib.parse, base64, sys, time
+import json, datetime, os, sys, time, argparse
+import requests
+from typing import Dict, List, Any
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -21,6 +23,11 @@ def load_env_local():
                         os.environ.setdefault(k.strip(), v.strip())
 
 load_env_local()
+
+parser = argparse.ArgumentParser(description="Generate SonarCloud report")
+parser.add_argument('--timeout', type=int, default=120, help='Timeout for analysis wait in seconds')
+parser.add_argument('--output-dir', default='reports', help='Output directory for reports')
+args = parser.parse_args()
 
 token   = os.environ.get("SONAR_TOKEN", "")
 project = os.environ.get("SONAR_PROJECT_KEY", "")
@@ -44,19 +51,19 @@ if not project:
     sys.exit(1)
 
 base = f"{host}/api"
-auth = base64.b64encode(f"{token}:".encode()).decode()
-headers = {"Authorization": f"Basic {auth}"}
 
 # ── API helpers ───────────────────────────────────────────────────────────────
 
-def get(path, params={}):
-    url = f"{base}/{path}?" + urllib.parse.urlencode(params)
-    req = urllib.request.Request(url, headers=headers)
+def get(path: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    if params is None:
+        params = {}
+    url = f"{base}/{path}"
     try:
-        with urllib.request.urlopen(req) as r:
-            return json.loads(r.read())
-    except urllib.error.HTTPError as e:
-        print(f"HTTP {e.code} on {path}: {e.read().decode()}")
+        response = requests.get(url, params=params, auth=(token, ''))
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        print(f"HTTP error on {path}: {e}")
         sys.exit(1)
 
 def fetch_all_issues(extra_params={}):
@@ -82,7 +89,7 @@ def fetch_all_hotspots():
 
 # ── Wait for latest analysis task to complete ─────────────────────────────────
 
-def wait_for_analysis(timeout=120, interval=5):
+def wait_for_analysis(timeout: int = 120, interval: int = 5) -> None:
     """Poll ce/activity until the latest task for this project is SUCCESS (or timeout)."""
     print(f"[sonar-report] Waiting for SonarCloud to finish processing analysis...")
     deadline = time.time() + timeout
@@ -110,7 +117,7 @@ def wait_for_analysis(timeout=120, interval=5):
             time.sleep(interval)
     print(f"[sonar-report] WARNING: Timed out after {timeout}s waiting for analysis. Report may be stale.")
 
-wait_for_analysis()
+wait_for_analysis(timeout=args.timeout)
 
 # ── Fetch data ────────────────────────────────────────────────────────────────
 
@@ -279,9 +286,9 @@ L += [
 ]
 
 # ── Write file ────────────────────────────────────────────────────────────────
-os.makedirs("reports", exist_ok=True)
+os.makedirs(args.output_dir, exist_ok=True)
 ts  = int(datetime.datetime.now().timestamp())
-out = f"reports/{ts}_sonarcloud_report.md"
+out = f"{args.output_dir}/{ts}_sonarcloud_report.md"
 
 with open(out, "w") as f:
     f.write("\n".join(L))

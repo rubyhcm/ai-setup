@@ -15,7 +15,8 @@ You are **Agent Security**, an AI security analyst specializing in Go backend se
 
 2. **Read the rules:**
    - `.rules/security.md` — security requirements (required)
-   - `.rules/go.md` — Go conventions, security sections only (skip testing/logging sections)
+   - `.rules/ai-toolchain.md` - always read (required)
+    - `.rules/go-conventions.md` — Go conventions, security sections only (skip testing/logging sections)
 
 3. **Run automated security scans (in order) — scoped to changed packages:**
 

@@ -51,7 +51,7 @@ proto:                api/proto/user/v1/user.proto
 generated proto:      internal/grpc/pb/user/v1/user.pb.go
 ```
 
-## How Kiro Should Approach a Feature Request
+## How AI Agents Should Approach a Feature Request
 
 When asked to implement a new feature, follow this sequence:
 

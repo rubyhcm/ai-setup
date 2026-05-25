@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecture Diagram</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    body { font-family: 'Inter', sans-serif; background-color: #fcfcfc; }
+    .node { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .db { border-radius: 50% / 20%; border-width: 2px; }
+    .box { border-radius: 8px; border-width: 2px; }
+    .diamond { background: #fef9e7; border: 2px solid #d35400; transform: rotate(45deg); display: flex; align-items: center; justify-content: center; position: absolute; z-index: 10; }
+    .diamond-content { transform: rotate(-45deg); text-align: center; }
+    
+    /* Connectors */
+    svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    path, line { stroke: #888; stroke-width: 2; fill: none; }
+    .arrow { fill: #888; }
+    .arrow-red { fill: #c0392b; stroke: #c0392b; }
+    .arrow-green { fill: #27ae60; stroke: #27ae60; }
+    .line-red { stroke: #c0392b; }
+    .line-green { stroke: #27ae60; }
+    .line-orange { stroke: #e67e22; }
+    .arrow-orange { stroke: #e67e22; fill: #e67e22; }
+</style>
+</head>
+<body class="relative w-[1200px] h-[800px] bg-white overflow-hidden mx-auto border shadow-lg text-gray-800">
+
+<!-- SVG for lines -->
+<svg>
+    <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" class="arrow" />
+        </marker>
+        <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" class="arrow-red" />
+        </marker>
+        <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" class="arrow-green" />
+        </marker>
+        <marker id="arrow-orange" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" class="arrow-orange" />
+        </marker>
+    </defs>
+    
+    <line x1="170" y1="100" x2="170" y2="130" marker-end="url(#arrow-orange)" class="line-orange" />
+    <line x1="1030" y1="100" x2="1030" y2="130" marker-end="url(#arrow)" />
+    <line x1="280" y1="162" x2="390" y2="162" marker-end="url(#arrow-orange)" class="line-orange" />
+    <line x1="920" y1="162" x2="810" y2="162" marker-end="url(#arrow)" />
+    
+    <line x1="600" y1="195" x2="600" y2="230" marker-end="url(#arrow)" />
+    
+    <!-- Gate 1 vertically to Gate 2 -->
+    <line x1="600" y1="350" x2="600" y2="420" class="line-green" marker-end="url(#arrow-green)" />
+    <!-- Branch to Penalty 1 -->
+    <line x1="600" y1="380" x2="360" y2="380" class="line-red" marker-end="url(#arrow-red)" />
+    
+    <!-- Gate 2 horizontally to Penalties / Rewards -->
+    <line x1="540" y1="480" x2="360" y2="480" class="line-red" marker-end="url(#arrow-red)" />
+    <line x1="660" y1="480" x2="840" y2="480" class="line-green" marker-end="url(#arrow-green)" />
+    
+    <!-- Reward to Dataset -->
+    <line x1="930" y1="510" x2="930" y2="550" marker-end="url(#arrow)" />
+    
+    <!-- Penalties to Update Agent -->
+    <path d="M270 410 L270 430 L110 430 L110 595 L500 595" class="line-red" marker-end="url(#arrow-red)" />
+    <path d="M270 510 L270 595 L110 595" class="line-red" />
+    
+    <!-- Reward to Update Agent -->
+    <path d="M930 510 L930 595 L700 595" class="line-green" marker-end="url(#arrow-green)" />
+    
+    <!-- Update Agent to Iteration -->
+    <line x1="600" y1="630" x2="600" y2="670" marker-end="url(#arrow)" />
+    
+    <!-- Loop back -->
+    <path d="M730 700 L1150 700 L1150 210 L600 210" marker-end="url(#arrow)" stroke-dasharray="5,5" />
+</svg>
+
+<!-- Labels -->
+<span class="absolute text-orange-600 text-[11px] font-semibold bg-white leading-none px-1" style="left: 450px; top: 373px;">Structural error</span>
+<span class="absolute text-red-600 text-[11px] font-semibold bg-white leading-none px-1" style="left: 560px; top: 373px;">No</span>
+<span class="absolute text-green-600 text-[11px] font-semibold bg-white px-1 leading-none" style="left: 605px; top: 380px;">Yes</span>
+<span class="absolute text-red-600 text-[11px] font-semibold bg-white leading-none px-1" style="left: 420px; top: 468px;">Detected</span>
+<span class="absolute text-green-600 text-[11px] font-semibold bg-white px-1 leading-none" style="left: 710px; top: 468px;">Passed?</span>
+<span class="absolute text-gray-500 text-[11px] bg-white leading-none px-1" style="left: 935px; top: 525px;">Save Sample</span>
+<span class="absolute text-gray-500 text-[11px] bg-white px-1" style="left: 1080px; top: 695px;">Loop back</span>
+
+<!-- Nodes -->
+<div class="node db bg-yellow-100 border-yellow-500 text-yellow-900 w-[140px]" style="left: 100px; top: 30px; font-size: 13px; padding: 25px 15px;">
+    <strong>Malicious Data</strong>
+</div>
+
+<div class="node db bg-fuchsia-100 border-fuchsia-500 text-fuchsia-900 w-[140px]" style="left: 960px; top: 30px; font-size: 13px; padding: 25px 15px;">
+    <strong>Benign Data</strong>
+</div>
+
+<div class="node box bg-orange-50 border-orange-300 text-orange-900 w-[220px] h-[70px]" style="left: 60px; top: 130px; padding: 10px;">
+    <div class="text-left w-full text-[13px]">
+        <p class="font-bold text-red-600"><i class="fa-solid fa-circle text-[8px] mr-1"></i>Extract Malicious Payload</p>
+        <p class="text-[11px] text-red-500 italic ml-4">JavaScript, Obfuscation</p>
+    </div>
+</div>
+
+<div class="node box bg-fuchsia-50 border-fuchsia-300 text-purple-900 w-[220px] h-[70px]" style="left: 920px; top: 130px; padding: 10px;">
+    <div class="text-left w-full text-[13px]">
+        <p class="font-bold text-blue-800"><i class="fa-solid fa-circle text-[8px] mr-1"></i>Extract Benign Features</p>
+        <p class="text-[11px] text-blue-700 italic ml-4">Metadata, Obj Tree, Fonts</p>
+    </div>
+</div>
+
+<div class="node box bg-blue-50 border-blue-400 text-blue-900 w-[420px] h-[65px]" style="left: 390px; top: 130px; padding: 10px;">
+    <strong class="text-[15px]">RL Agent Policy Network</strong>
+    <p class="text-[13px]">Action A_t: Select & Inject Benign Features</p>
+</div>
+
+<!-- Diamonds -->
+<div class="diamond" style="left: 540px; top: 230px; width: 120px; height: 120px;">
+    <div class="diamond-content" style="width: 120px;">
+        <strong class="text-[13px]">Gate 1:<br>Validation</strong><br>
+        <span class="text-[11px]">Does the file<br>still work?</span>
+    </div>
+</div>
+
+<div class="diamond" style="left: 540px; top: 420px; width: 120px; height: 120px;">
+    <div class="diamond-content" style="width: 120px;">
+        <strong class="text-[13px]">Gate 2:<br>Detection</strong><br>
+        <span class="text-[11px]">AI-based Surrogate</span>
+    </div>
+</div>
+
+<!-- Penalties -->
+<div class="node box bg-red-50 border-red-500 text-red-900 w-[180px] h-[60px]" style="left: 180px; top: 350px; padding: 10px;">
+    <strong class="text-red-700 text-[14px]">Penalty | R = -10</strong>
+    <p class="text-[12px]">Structural Error</p>
+</div>
+
+<div class="node box bg-red-50 border-red-500 text-red-900 w-[180px] h-[60px]" style="left: 180px; top: 450px; padding: 10px;">
+    <strong class="text-red-700 text-[14px]">Penalty | R = -1</strong>
+    <p class="text-[12px]">Detected (Not Benign)</p>
+</div>
+
+<!-- Reward -->
+<div class="node box bg-green-50 border-green-500 text-green-900 w-[180px] h-[60px]" style="left: 840px; top: 450px; padding: 10px;">
+    <strong class="text-green-700 text-[14px]">Reward | R = +10</strong>
+    <p class="text-[12px]">Evasion Success</p>
+</div>
+
+<!-- Spoofed Malware -->
+<div class="node db bg-fuchsia-100 border-fuchsia-500 text-fuchsia-900 w-[180px]" style="left: 840px; top: 550px; font-size: 13px; padding: 25px 15px;">
+    <strong class="text-[14px]">Spoofed Malware</strong>
+    <p class="text-[11px]">Adversarial Simulation</p>
+</div>
+
+<!-- Update Agent -->
+<div class="node box bg-indigo-50 border-indigo-400 text-indigo-900 w-[200px] h-[70px]" style="left: 500px; top: 560px; padding: 10px;">
+    <strong class="text-[15px]">Update Agent</strong>
+    <p class="text-[13px]">(DQN / PPO Algorithms)</p>
+</div>
+
+<!-- Iteration -->
+<div class="node box bg-yellow-50 border-yellow-600 text-yellow-900 w-[260px] h-[60px]" style="left: 470px; top: 670px; padding: 5px;">
+    <strong class="text-[14px]">Iteration</strong>
+    <div class="w-full h-[1px] bg-yellow-300 my-1"></div>
+    <p class="text-[12px] font-semibold">State S_{t+1}: Current Structure</p>
+</div>
+
+</body>
+</html>

@@ -17,7 +17,8 @@ You are **Agent Review**, an AI code reviewer specializing in Go backend quality
    - If previous review exists (handoff indicates loop_count > 0): read latest `.ai-agents/reviews/review-*.md`.
 
 2. **Read rules (selective):**
-   - `.rules/go.md` — required
+   - `.rules/ai-toolchain.md` - always read (required)
+    - `.rules/go-conventions.md` — required
    - `.rules/architecture.md` — required
    - `.rules/design-patterns.md` — only if task adds new patterns/structs
    - `.rules/testing.md` — only if coverage concerns are flagged
@@ -114,18 +115,18 @@ gRPC Examples file (docs/grpc/<module>/<service>_examples.md):
 
 ### Layer 3: Code Quality Review
 ```
-Configuration rule (.rules/go.md):
+Configuration rule (.rules/go-conventions.md):
   - [ ] No magic numbers / hardcoded durations / limits in business logic?
   - [ ] All configurable values in config/config.yaml + loaded via Viper?
   - [ ] Config struct fields have mapstructure tags?
 
-Logging rule (.rules/go.md):
+Logging rule (.rules/go-conventions.md):
   - [ ] Every struct that logs creates a child logger in constructor?
         (logger.With(zap.String("component", "XxxService")))
   - [ ] No bare log statements without component context?
   - [ ] No sensitive data logged (passwords, tokens, full API keys)?
 
-Go conventions (.rules/go.md):
+Go conventions (.rules/go-conventions.md):
   - [ ] Proper error handling (fmt.Errorf("%w"), errors.Is/As)
   - [ ] Context as first parameter in service/repository methods
   - [ ] Proper naming (CamelCase, no I-prefix, Err* for errors)
@@ -210,7 +211,7 @@ Save review to `.ai-agents/reviews/review-<N>.md`:
 #### [SEVERITY] Finding title
 - **File:** path/to/file.go:42
 - **Issue:** Description
-- **Rule:** .rules/go.md - Error Handling
+- **Rule:** .rules/go-conventions.md - Error Handling
 - **Fix:** Specific code suggestion
 
 ### Performance

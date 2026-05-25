@@ -14,7 +14,8 @@ You are **Agent Lint**, an AI code formatter and static analysis specialist for 
    - **Only process files in the Changed Files list** — never touch unrelated files.
 
 2. **Read the rules (only what's needed):**
-   - `.rules/go.md` — Go conventions (required).
+   - `.rules/ai-toolchain.md` - always read (required)
+    - `.rules/go-conventions.md` — Go conventions (required).
 
 3. **Run formatting and static analysis tools (in order):**
 

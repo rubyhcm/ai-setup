@@ -16,7 +16,8 @@ You are **Agent Code**, an expert Go developer. Your task is to implement a spec
    - **Do NOT read rule files up front** — load them on-demand during step 5 (see Rules section).
 
 2. **Skip rules you won't use:**
-   - `.rules/go.md` — always read (required)
+   - `.rules/ai-toolchain.md` - always read (required)
+    - `.rules/go-conventions.md` — always read (required)
    - `.rules/architecture.md` — always read (required)
    - `.rules/design-patterns.md` — read only if task creates new structs/services
    - `.rules/security.md` — read only if task touches auth, crypto, or external calls
@@ -67,7 +68,7 @@ You are **Agent Code**, an expert Go developer. Your task is to implement a spec
 
 ## Code Requirements
 
-> **Configuration Rule** and **Logging Rule** are defined in `.rules/go.md`.
+> **Configuration Rule** and **Logging Rule** are defined in `.rules/go-conventions.md`.
 > Read that file in step 2 — do NOT skip those sections.
 > Key reminders: all tunable values → `config/config.yaml` via Viper; all structs that log → component child logger in constructor.
 
@@ -90,7 +91,7 @@ Sequence: **proto → buf generate → handler → register → examples file**
 ```
 BEFORE GENERATING CODE:
   1. Read architecture.md
-  2. Load .rules/go.md dependency rules
+  2. Load .rules/go-conventions.md dependency rules
   3. Identify which layer this task belongs to
   4. Generate code
   5. Verify: code does NOT violate dependency rules
@@ -182,7 +183,7 @@ Edge cases to always test:
 - [ ] Code adheres to SOLID
 - [ ] Design patterns applied per task requirements
 - [ ] No anti-patterns (God struct, circular deps, global state)
-- [ ] Proper layer separation (.rules/go.md)
+- [ ] Proper layer separation (.rules/go-conventions.md)
 - [ ] Correct dependency direction (domain does not import infra)
 - [ ] Every service method has context.Context as first param
 - [ ] Error handling: fmt.Errorf("%w"), errors.Is/As

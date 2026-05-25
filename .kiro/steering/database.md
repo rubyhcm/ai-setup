@@ -2,47 +2,58 @@
 inclusion: always
 ---
 
-# Database Design & Migration Rules
+# DATABASE DESIGN & MIGRATION RULES
 
-## Global Principles
+## 0. Global Principles
 
-- **Consistency** — naming, structure, constraints across all tables
-- **Explicitness** — no implicit assumptions; always define explicitly
-- **Backward compatibility** — support zero-downtime migrations only
-- **Safety first** — avoid destructive operations unless explicitly instructed
-- **Access pattern driven** — design indexes and schema for real query patterns
+All schemas MUST follow:
 
-## Target DBMS Awareness (CRITICAL)
+- **Consistency** — naming, structure, constraints
+- **Explicitness** — no implicit assumptions
+- **Backward compatibility** — support zero-downtime migrations
+- **Safety first** — avoid destructive operations
+- **Access pattern driven design** — optimize for real queries
 
-Detect or be told which DBMS is in use. Generate SQL compatible with it.
+## 0.1 Target DBMS Awareness (CRITICAL)
 
-**PostgreSQL:**
-- Use `TIMESTAMPTZ` for timestamps
-- Supports: Partial Index, `COMMENT ON`, `gen_random_uuid()`, `GENERATED ALWAYS AS IDENTITY`
+Agent MUST detect or be provided target DBMS.
 
-**MySQL (8+):**
+**PostgreSQL**
+- Use `TIMESTAMPTZ`
+- Support: Partial Index, CHECK, COMMENT ON, gen_random_uuid()
+
+**MySQL (8+)**
 - Use `TIMESTAMP` or `DATETIME`
 - NO Partial Index → use composite index workaround
-- NO `COMMENT ON` → use inline column/table comments (`COMMENT 'text'`)
+- NO `COMMENT ON` → use inline column/table comments
 - Use `UUID()` or application-generated UUID
-- CHECK constraints supported (MySQL 8+)
+- CHECK constraints are supported (MySQL 8+)
+
+Agent MUST generate SQL compatible with the target DBMS.
 
 ## 1. Table Requirements
 
-### Primary Key (REQUIRED for every table)
+### 1.1 Primary Key (REQUIRED)
 
+Every table MUST have a primary key:
+
+Standard (recommended):
 ```sql
--- PostgreSQL (preferred)
+-- PostgreSQL
 id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY
 
 -- MySQL
 id BIGINT AUTO_INCREMENT PRIMARY KEY
+```
 
--- Distributed systems (optional)
+Distributed systems (optional):
+```sql
 id UUID PRIMARY KEY
 ```
 
-### Audit Fields (REQUIRED for every table)
+### 1.2 Audit Fields (REQUIRED)
+
+Every table MUST include:
 
 ```sql
 -- PostgreSQL
@@ -54,147 +65,188 @@ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ```
 
-### Soft Delete (OPTIONAL)
+Rules:
+- Prefer native auto-update (`ON UPDATE`) if supported.
+- Otherwise, use trigger to update `updated_at`.
+
+### 1.3 Soft Delete (OPTIONAL)
 
 ```sql
 deleted_at TIMESTAMP NULL
 ```
 
 Rules:
-- DO NOT use `is_deleted` boolean — use `deleted_at` timestamp only
-- ALL queries MUST include `WHERE deleted_at IS NULL`
+- DO NOT use `is_deleted`.
+- All queries MUST include: `deleted_at IS NULL`.
 
-### Optimistic Locking (OPTIONAL)
+### 1.4 Versioning (OPTIONAL – Optimistic Locking)
 
 ```sql
 version INT NOT NULL DEFAULT 1
 ```
 
+Used for concurrency control.
+
+### 1.5 Concurrency Control (ADVANCED)
+
+- Optimistic Locking: use `version`
+- Pessimistic Locking: use `SELECT ... FOR UPDATE` in critical transactions
+
 ## 2. Column Design Rules
 
-- Column names: `snake_case`, descriptive
-- Foreign keys: `<referenced_table_singular>_id` (e.g., `user_id`, `order_id`)
-- Default `NOT NULL` — only allow `NULL` if truly optional
-- Always define defaults when meaningful
-- If table > 20 columns → evaluate vertical partitioning (split into related tables)
+### 2.1 Naming Convention
+
+- MUST use `snake_case`.
+- MUST be descriptive.
+- Foreign keys MUST follow: `<referenced_table_singular>_id` (e.g., `user_id`, `order_id`).
+
+### 2.2 NULL Handling
+
+- Columns MUST be `NOT NULL` by default.
+- Only allow `NULL` if truly optional.
+
+### 2.3 Default Values
+
+- MUST define defaults when meaningful.
+- Defaults MUST reflect business logic.
+
+### 2.4 Column Limit
+
+- If table > 20 columns → SHOULD evaluate vertical partitioning.
 
 ## 3. Enum / Status Fields
 
-**Option A — Native ENUM** (for stable, low-change values)
+### 3.1 Allowed Strategies
 
-**Option B — VARCHAR + CHECK** (recommended for flexibility)
+**Option A – Native ENUM** (low-change values)
+- Suitable for stable enums.
+
+**Option B – VARCHAR + CHECK**
 ```sql
-status VARCHAR(20) NOT NULL CHECK (status IN ('ACTIVE', 'PENDING', 'CANCELED'))
+status VARCHAR(20) CHECK (status IN ('ACTIVE', 'PENDING', 'CANCELED'))
 ```
 
-**Option C — Lookup Table** (for frequently changing enums)
+**Option C – Lookup Table (RECOMMENDED for flexibility)**
 ```sql
-status_id INT NOT NULL REFERENCES statuses(id)
+status_id INT REFERENCES statuses(id)
 ```
 
-Rules:
-- MUST document enum meaning via comments
-- DO NOT use magic numbers without explanation
+### 3.2 Rules
+
+- MUST document enum meaning via comments.
+- DO NOT use magic numbers without explanation.
+- DO NOT auto-index enum fields.
 
 ## 4. Indexing Strategy
 
-Create index ONLY if the column is used in `WHERE`, `JOIN`, or `ORDER BY`.
+### 4.1 When to Create Index
+
+Only if used in:
+- `WHERE`
+- `JOIN`
+- `ORDER BY`
+
+### 4.2 Selectivity
+
+Prefer high-selectivity columns.
+
+### 4.3 Composite Index (PREFERRED)
+
+Follow leftmost prefix rule.
+
+### 4.4 Soft Delete Optimization
 
 ```sql
--- Composite index (follow leftmost prefix rule)
-CREATE INDEX idx_orders_user_status ON orders(user_id, status);
-
--- Soft delete optimization
 -- PostgreSQL (Partial Index)
-CREATE INDEX idx_users_email_active ON users(email)
+CREATE INDEX idx_users_active ON users(email)
 WHERE deleted_at IS NULL;
 
--- MySQL (Composite Index workaround)
+-- MySQL workaround (Composite Index)
 CREATE INDEX idx_users_email_deleted_at ON users(email, deleted_at);
-
--- Covering index for hot paths (include all selected columns)
-CREATE INDEX idx_users_covering ON users(email) INCLUDE (id, name, status);
 ```
+
+### 4.5 Covering Index (ADVANCED)
+
+Include all selected columns in index to avoid table lookup.
 
 ## 5. Constraints
 
-### Foreign Keys (REQUIRED)
+### 5.1 Foreign Keys (REQUIRED)
 
 ```sql
 FOREIGN KEY (user_id)
 REFERENCES users(id)
-ON DELETE RESTRICT  -- or CASCADE or SET NULL
+ON DELETE <RESTRICT | CASCADE | SET NULL>
 ```
 
-- MUST explicitly define `ON DELETE` behavior
-- RESTRICT: block deletion of parent (safest default)
-- CASCADE: delete children automatically
-- SET NULL: null out the FK column
+Rules:
+- MUST explicitly define `ON DELETE` behavior.
+- DO NOT default blindly.
 
-### Unique Constraints
+### 5.2 Unique Constraints
+
+MUST enforce business uniqueness.
 
 ```sql
 -- PostgreSQL (Soft Delete — Partial Unique Index)
-CREATE UNIQUE INDEX uk_users_email_active
+CREATE UNIQUE INDEX uk_email_active
 ON users(email)
 WHERE deleted_at IS NULL;
 
 -- MySQL (Soft Delete workaround)
-UNIQUE KEY uk_users_email_deleted_at (email, deleted_at)
+UNIQUE KEY uk_email_deleted_at (email, deleted_at)
 ```
 
 ## 6. Comment Requirements (MANDATORY)
 
+Agent MUST generate comments:
+
 ```sql
 -- PostgreSQL
-COMMENT ON TABLE users IS 'Registered user accounts';
-COMMENT ON COLUMN users.email IS 'Unique email address used for login';
-COMMENT ON COLUMN users.status IS 'Account status: ACTIVE, PENDING, SUSPENDED';
+COMMENT ON TABLE users IS 'User information';
+COMMENT ON COLUMN users.email IS 'Unique email address';
 
 -- MySQL (inline)
-CREATE TABLE users (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Unique user identifier',
-    email VARCHAR(255) NOT NULL COMMENT 'Unique email address used for login',
-    status VARCHAR(20) NOT NULL COMMENT 'Account status: ACTIVE, PENDING, SUSPENDED'
-) COMMENT = 'Registered user accounts';
+email VARCHAR(255) COMMENT 'Unique email address'
 ```
 
 ## 7. Migration Rules
 
-### File Naming
+### 7.1 Versioning
 
-```
-migrations/
-  001_create_users.up.sql
-  001_create_users.down.sql
-  002_add_user_status.up.sql
-  002_add_user_status.down.sql
-```
+Every migration MUST have version (timestamp or incremental).
 
-### Rules
+### 7.2 Idempotency
 
-- Every UP migration MUST have a DOWN (rollback)
-- Use `IF NOT EXISTS` / `IF EXISTS` for idempotency — every migration MUST be safe to re-run
-- DO NOT drop columns/tables without explicit instruction
-- DO NOT destructively modify data in migrations without explicit instruction
+Every migration MUST be idempotent — safe to run multiple times without error.
 
-### Idempotency Patterns
-
+**CREATE TABLE:**
 ```sql
--- Tables
 CREATE TABLE IF NOT EXISTS users (...);
+```
 
--- Columns (PostgreSQL)
+**ADD COLUMN:**
+```sql
+-- PostgreSQL
 ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20) NULL;
 
--- Indexes
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+-- MySQL (no native IF NOT EXISTS for ADD COLUMN — use stored procedure or migration tool check)
+```
 
--- Drop
+**CREATE INDEX:**
+```sql
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+```
+
+**DROP TABLE / DROP COLUMN:**
+```sql
 DROP TABLE IF EXISTS legacy_users;
 ALTER TABLE users DROP COLUMN IF EXISTS old_field;  -- PostgreSQL only
+```
 
--- Constraints (PostgreSQL)
+**CREATE/DROP CONSTRAINT:**
+```sql
+-- PostgreSQL: check existence before adding
 DO $$ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint WHERE conname = 'fk_orders_user_id'
@@ -205,145 +257,175 @@ DO $$ BEGIN
 END $$;
 ```
 
-### Transaction Safety (CRITICAL)
+### 7.3 Transaction Safety (CRITICAL)
 
-**PostgreSQL** — supports transactional DDL, ALWAYS wrap in `BEGIN/COMMIT`:
+**Wrap every migration in a transaction** to ensure atomicity:
 
 ```sql
+-- PostgreSQL (supports transactional DDL)
 BEGIN;
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20) NULL;
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
 
 COMMIT;
+-- On failure: ROLLBACK is automatic
 ```
 
-**MySQL** — DDL causes implicit commit, transactions do NOT protect DDL:
-- Keep each migration file as a single atomic logical change
-- Rely on migration tool (golang-migrate, Flyway) to track execution state
-- Ensure idempotency via `IF NOT EXISTS` / `IF EXISTS` instead of transactions
-
 **Rules:**
-- NEVER mix DML + DDL in the same transaction on MySQL
-- On failure in PostgreSQL: automatic ROLLBACK via transaction
-- On failure in MySQL: migration must be idempotent to safely retry
+- PostgreSQL: ALL DDL statements (CREATE, ALTER, DROP) are transactional → wrap in `BEGIN/COMMIT`
+- MySQL: DDL causes implicit commit → **transactions do NOT protect DDL in MySQL**
+  - Use migration tools (Flyway, Liquibase, golang-migrate) to track execution state
+  - Keep each MySQL migration file atomic (single logical change)
+- NEVER mix DML + DDL in same transaction on MySQL
+- On failure: migration MUST leave the database in its original state (for PostgreSQL) or be re-runnable (for MySQL via idempotency)
 
-### DOWN Migration Example
+**PostgreSQL example — full safe migration:**
+```sql
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS orders (
+    id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id     BIGINT NOT NULL,
+    status      VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+                    CHECK (status IN ('PENDING', 'CONFIRMED', 'CANCELED')),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at  TIMESTAMPTZ NULL,
+    version     INT NOT NULL DEFAULT 1,
+    CONSTRAINT fk_orders_user_id FOREIGN KEY (user_id)
+        REFERENCES users(id) ON DELETE RESTRICT
+);
+
+COMMENT ON TABLE orders IS 'Customer orders';
+COMMENT ON COLUMN orders.status IS 'Order lifecycle: PENDING, CONFIRMED, CANCELED';
+
+CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status_active ON orders(status)
+WHERE deleted_at IS NULL;
+
+COMMIT;
+```
+
+**MySQL example — idempotent migration (no transaction for DDL):**
+```sql
+-- Each statement must be independently idempotent
+CREATE TABLE IF NOT EXISTS orders (
+    id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id    BIGINT NOT NULL,
+    status     VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+                   COMMENT 'Order status: PENDING, CONFIRMED, CANCELED',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL
+) COMMENT = 'Customer orders';
+
+-- Index: check via migration tool, or use CREATE INDEX IF NOT EXISTS (MySQL 8.0.29+)
+CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
+```
+
+### 7.4 Rollback
+
+Every `UP` MUST have `DOWN`.
 
 ```sql
--- DOWN must exactly reverse UP
+-- DOWN migration must reverse UP exactly
 -- PostgreSQL
 BEGIN;
 DROP TABLE IF EXISTS orders;
 COMMIT;
-
--- MySQL
-DROP TABLE IF EXISTS orders;
 ```
 
-### Migration Checklist
+### 7.5 Safety
 
-Before committing any migration file:
+DO NOT drop columns/tables or modify data destructively without explicit instruction.
+
+### 7.6 Zero-Downtime Strategy (CRITICAL)
+
+Use **Expand → Migrate → Contract**:
+1. Add new column (nullable)
+2. Backfill data
+3. Switch application
+4. Remove old column (later)
+
+- DO NOT rename columns directly or drop columns immediately.
+
+## 7.7 Migration Checklist
+
+Before committing any migration file, verify:
 - [ ] Wrapped in `BEGIN/COMMIT` (PostgreSQL)
 - [ ] All `CREATE` use `IF NOT EXISTS`
 - [ ] All `DROP` use `IF EXISTS`
 - [ ] DOWN migration exists and reverses UP exactly
-- [ ] No destructive data changes without explicit instruction
-
-### Zero-Downtime Strategy (CRITICAL)
-
-Use **Expand → Migrate → Contract**:
-
-```
-Phase 1 — EXPAND: Add new column (nullable, no breaking change)
-  ALTER TABLE users ADD COLUMN full_name VARCHAR(255) NULL;
-
-Phase 2 — MIGRATE: Backfill data (application handles both old + new)
-  UPDATE users SET full_name = name WHERE full_name IS NULL;
-
-Phase 3 — CONTRACT: Remove old column (after all apps use new column)
-  ALTER TABLE users DROP COLUMN name;
-```
-
-- DO NOT rename columns directly in one migration
-- DO NOT drop columns immediately after rename
-- Allow time between phases for deployment rollout
+- [ ] No `SELECT *` or unparameterized queries
+- [ ] No destructive data change without explicit instruction
 
 ## 8. Query Rules
 
-### No SELECT * (REQUIRED)
+### 8.1 Select Rule
 
 ```sql
--- FORBIDDEN
-SELECT * FROM users
+-- ❌ NOT allowed
+SELECT *
 
--- REQUIRED
-SELECT id, email, name, status, created_at FROM users
+-- ✅ REQUIRED
+SELECT id, email FROM users
 ```
 
-### Soft Delete Awareness
+### 8.2 Soft Delete Awareness
 
 ```sql
--- ALWAYS include in WHERE clause
 WHERE deleted_at IS NULL
 ```
 
-### Keyset Pagination (for large datasets)
+### 8.3 Pagination (IMPORTANT)
 
+Avoid:
 ```sql
--- FORBIDDEN (slow for large offsets)
-SELECT id, name FROM users LIMIT 10 OFFSET 10000
+LIMIT 10 OFFSET 10000
+```
 
--- REQUIRED: Keyset pagination
-SELECT id, name FROM users
-WHERE id > :last_id
+Use Keyset Pagination:
+```sql
+WHERE id > last_id
 ORDER BY id
 LIMIT 10
 ```
 
-### Parameterized Queries Only
+## 9. Schema Design Strategy
 
-```sql
--- FORBIDDEN
-SELECT * FROM users WHERE email = '" + email + "'  -- SQL injection!
+### 9.1 Normalization
 
--- REQUIRED
-SELECT id, email FROM users WHERE email = ?  -- MySQL
-SELECT id, email FROM users WHERE email = $1 -- PostgreSQL
-```
+- Default: 3NF.
+- Denormalize ONLY if required.
 
-## 9. Full Table Example
+### 9.2 Access Pattern Driven
 
-```sql
--- PostgreSQL
-CREATE TABLE IF NOT EXISTS users (
-    id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    email       VARCHAR(255) NOT NULL,
-    name        VARCHAR(100) NOT NULL,
-    status      VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE'
-                    CHECK (status IN ('ACTIVE', 'PENDING', 'SUSPENDED')),
-    created_at  TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at  TIMESTAMPTZ  NULL,
-    version     INT          NOT NULL DEFAULT 1
-);
+Design based on:
+- Query patterns
+- Read/write ratio
+- Data volume
 
-COMMENT ON TABLE users IS 'Registered user accounts';
-COMMENT ON COLUMN users.email IS 'Unique email used for login';
-COMMENT ON COLUMN users.status IS 'Account lifecycle status';
+### 9.3 Partitioning (ADVANCED)
 
--- Partial unique index for soft delete
-CREATE UNIQUE INDEX uk_users_email_active ON users(email)
-WHERE deleted_at IS NULL;
+Use for large tables:
+- Time-based (e.g., `created_at`)
+- Hash-based
 
--- Index for soft-deleted queries
-CREATE INDEX idx_users_status_active ON users(status)
-WHERE deleted_at IS NULL;
-```
+## 10. Output Requirements for Agent
+
+When generating schema/migration, Agent MUST:
+
+- Provide executable SQL.
+- Include: Primary keys, Audit fields, Constraints, Indexes.
+- Include comments (DB-specific).
+- Handle soft delete indexing correctly.
+- Provide both `UP` and `DOWN` migrations.
+- Ensure DBMS compatibility.
 
 ## Final Principles
 
 - Prefer clarity over brevity
 - Prefer explicit over implicit
 - Prefer safe schema over premature optimization
-- Design for real production systems, not theoretical models
+- Design for real-world production systems, not theoretical models
