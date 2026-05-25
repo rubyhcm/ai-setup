@@ -55,29 +55,26 @@ Repository này là bộ hướng dẫn để dùng với Claude Code theo mô h
 
 ```text
 ai_tech/
-├── prompts/                   # Bộ não của agents (system prompts)
-│   └── agent-kiro.md          # System prompt cho Agent Kiro
-├── .claude/commands/          # Slash commands cho user
-│   └── agent-kiro.md          # /agent-kiro command
-├── .rules/                    # Luật viết code (dùng cho Claude Code agents)
-├── .kiro/                     # Steering rules + spec templates (dùng cho Kiro IDE)
-│   ├── steering/              # Rules Kiro luôn đọc (inclusion: always)
-│   │   ├── project-overview.md
-│   │   ├── architecture.md
-│   │   ├── go-conventions.md
-│   │   ├── database.md
-│   │   ├── security.md
-│   │   ├── testing.md
-│   │   └── design-patterns.md
-│   └── specs/                 # Feature specs (tạo bằng /agent-kiro)
-│       └── _template/         # Template để tạo spec mới
-├── .ai-agents/                # Workspace runtime của Claude Code agents
-├── scripts/                   # Scripts dùng chung
-├── docs/                      # Tài liệu hướng dẫn
-├── reports/                   # Báo cáo sinh ra bởi agents
-├── README.md                  # Giới thiệu hệ thống
-├── USER_GUIDE.md              # Hướng dẫn sử dụng đầy đủ
-├── sonar-project.properties   # Cấu hình SonarCloud
-├── .gitignore
-└── .golangci.yml
+├── .rules/                    # Master Rules (Single Source of Truth)
+├── .aiassistant/              # JetBrains AI rules (auto-generated)
+├── .antigravity/              # Antigravity IDE rules (auto-generated)
+├── .cursor/                   # Cursor rules (auto-generated)
+├── .github/                   # Copilot instructions (auto-generated)
+├── .kilo/                     # Kilo CLI rules (auto-generated)
+├── .kiro/                     # Kiro IDE & CLI steering (auto-generated)
+├── .ai-agents/                # Workspace runtime của Claude Code
+├── prompts/                   # Hệ thống System Prompts cho agents
+├── scripts/                   # Scripts đồng bộ (sync_rules.py)
+├── others/                    # Kho lưu trữ (Archive) tài liệu & files nháp
+├── docs/                      # Hướng dẫn chi tiết
+├── GEMINI.md                  # Chỉ thị cho Gemini CLI
+├── README.md                  # Giới thiệu tổng quan
+└── USER_GUIDE.md              # Cẩm nang sử dụng chi tiết
 ```
+
+## Ghi chú Quan trọng
+
+- **Không sửa trực tiếp** các file trong `.cursor/`, `.kiro/`, `.kilo/`, `.aiassistant/`, `.antigravity/`, hay `.github/`. 
+- **Quy trình chuẩn:** Chỉ sửa luật tại `.rules/`, sau đó chạy `python scripts/sync_rules.py` để đồng bộ sang tất cả IDEs/Agents.
+- Hệ thống đã tích hợp sẵn **RTK, ICM và GitNexus** để tối ưu hóa token và an toàn kiến trúc.
+- Tuyệt đối tuân thủ **Git Autonomy**: AI không được tự ý stage/commit nếu không có lệnh cụ thể.
