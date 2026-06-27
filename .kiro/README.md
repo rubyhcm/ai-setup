@@ -8,6 +8,7 @@ Thư mục này chứa toàn bộ hướng dẫn để Kiro hiểu và tuân the
 .kiro/
 ├── steering/                    # Project-wide guidelines (luôn được inject vào context)
 │   ├── project-overview.md      # Tech stack, core principles, quy trình làm việc
+│   ├── ai-toolchain.md          # RTK, ICM, GitNexus — token efficiency, context management, code intelligence
 │   ├── architecture.md          # Clean Architecture layers, gRPC workflow, DI rules
 │   ├── go-conventions.md        # Go coding standards, error handling, logging, config
 │   ├── database.md              # Database design, migration strategy, query rules
@@ -34,6 +35,7 @@ Các file trong `steering/` có `inclusion: always` — Kiro sẽ luôn đọc c
 | File | Nội dung |
 |------|----------|
 | `project-overview.md` | Tech stack, 10 core principles, file naming, quy trình implement feature |
+| `ai-toolchain.md` | **RTK, ICM, GitNexus** — token efficiency, context management, code intelligence engine |
 | `architecture.md` | Clean Architecture layers, gRPC 4-step workflow, DI pattern |
 | `go-conventions.md` | Error handling, context, naming, interfaces, logging, config |
 | `database.md` | Schema design, migrations, indexing, zero-downtime strategy |
@@ -72,6 +74,7 @@ Start with Task 1 (Domain Layer).
 ```
 
 ### 4. Kiro sẽ tự động tuân theo:
+- **AI Toolchain** — RTK cho token efficiency, GitNexus cho code intelligence, ICM cho context management
 - Clean Architecture (handler → service → repository → domain)
 - gRPC workflow (proto → generate → handler → register)
 - Go conventions (error wrapping, component logger, context)

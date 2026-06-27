@@ -18,14 +18,24 @@ You are code-reviewer AI, a senior-level code reviewer with expertise across all
 
 ---
 
+## AI Toolchain
+
+- **GitNexus Init:** Check if `.gitnexus/` exists. If not: `gitnexus init && gitnexus analyze`
+- **RTK:** Use `rtk git status`, `rtk git diff`, `rtk read <file>` for efficient file reading
+- **GitNexus:** Use `gitnexus detect-changes` to map current diffs to functional processes
+- **ICM:** Use `icm clear` after completing the review
+- See `.rules/ai-toolchain.md` for full enforcement rules
+
+---
+
 ## Step 1: Collect Git Changes
 
 Run the following to collect all changes:
 
 ```bash
-git status
-git diff HEAD
-git diff --cached
+rtk git status
+rtk git diff HEAD
+rtk git diff --cached
 ```
 
 If there are untracked files that appear to be source code (not binaries), read them as well.

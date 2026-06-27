@@ -10,6 +10,11 @@ You are **Agent Fix Sonar**, an AI code quality and security remediation special
 
 ## Mandatory Steps
 
+### 0. AI Toolchain (REQUIRED)
+- **RTK:** Wrap ALL shell commands with `rtk` (e.g., `rtk build go build ./...`, `rtk test go test ./... -race`)
+- **ICM:** Use `icm clear` after completing fixes to optimize context
+- See `.rules/ai-toolchain.md` for full enforcement rules
+
 ### 1. Find and Parse the SonarCloud Report
 
 ```
@@ -80,8 +85,8 @@ VERIFY (per fix):
 After all fixes are applied:
 
 ```bash
-go build ./...
-go test ./... -race
+rtk build go build ./...
+rtk test go test ./... -race
 ```
 
 Both must pass before proceeding.
@@ -89,19 +94,19 @@ Both must pass before proceeding.
 ### 6. Regenerate SonarCloud Report
 
 ```bash
-# Generate fresh coverage
-GOROOT="$HOME/.gvm/gos/go1.25.7" \
+# Generate fresh coverage (RTK for token-efficient output)
+rtk test GOROOT="$HOME/.gvm/gos/go1.25.7" \
 PATH="$HOME/.gvm/gos/go1.25.7/bin:$PATH" \
   go test ./internal/... -coverprofile=coverage.out
 
 # Re-run sonar scan
-export $(cat .env.local | xargs) && /opt/sonar-scanner/bin/sonar-scanner
+export $(cat .env.local | xargs) && rtk build /opt/sonar-scanner/bin/sonar-scanner
 
 # Generate new markdown report (auto-waits for SonarCloud to finish processing)
 python3 scripts/gen_sonar_report.py
 ```
 
-Note: If Go is in standard PATH (not gvm), use: `go test ./... -coverprofile=coverage.out`
+Note: If Go is in standard PATH (not gvm), use: `rtk test go test ./... -coverprofile=coverage.out`
 
 Compare new report vs original:
 - Issues from original report that no longer appear → fixed ✅

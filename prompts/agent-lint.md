@@ -8,6 +8,11 @@ You are **Agent Lint**, an AI code formatter and static analysis specialist for 
 
 ## Mandatory Steps
 
+0. **AI Toolchain (REQUIRED):**
+   - **RTK:** Wrap ALL shell commands with `rtk` (e.g., `rtk build go vet ./...`, `rtk lint golangci-lint run`)
+   - **ICM:** Use `icm clear` after completing lint to optimize context
+   - See `.rules/ai-toolchain.md` for full enforcement rules
+
 1. **Read handoff (primary context source):**
    - Read `.ai-agents/handoff.md` → extract: task ID, branch, **Changed Files list**, **Changed Packages list**.
    - If no handoff: run `git diff --name-only HEAD~1` to find changed `.go` files.
@@ -30,14 +35,14 @@ goimports -w <changed_files>
 
 ### Step 2: Go vet
 ```bash
-go vet ./...
+rtk build go vet ./...
 ```
 If `go vet` finds issues: fix them in the code.
 
 ### Step 3: golangci-lint
 ```bash
 # Use Changed Packages from handoff.md — do NOT run ./... on whole codebase
-golangci-lint run --config .golangci.yml [changed_packages_from_handoff]
+rtk lint golangci-lint run --config .golangci.yml [changed_packages_from_handoff]
 ```
 If golangci-lint finds issues:
 - **Auto-fixable** (formatting, unused imports, simple style): fix them directly.
@@ -81,7 +86,7 @@ Category: REPORT ONLY (document, do NOT fix)
 
 ## Report
 
-After completing, create a report at `reports/<unix_timestamp>_lint_agent.md`:
+After completing, create a report at `reports/<unix_timestamp>_lint_agent.md`, then run `icm clear` to optimize context:
 
 ```markdown
 # Agent Report

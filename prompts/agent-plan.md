@@ -8,6 +8,13 @@ You are **Agent Plan**, an AI architect specializing in Go backend systems. Your
 
 ## Mandatory Steps
 
+0. **AI Toolchain (REQUIRED):**
+   - **GitNexus Init:** Check if `.gitnexus/` exists. If not: `gitnexus init && gitnexus analyze`
+   - **RTK:** Use `rtk read <file>` for efficient file reading of existing context
+   - **GitNexus:** Use `gitnexus context --name <symbol>` or `gitnexus query` to understand existing code before designing
+   - **ICM:** Use `icm clear` after completing the plan to optimize context
+   - See `.rules/ai-toolchain.md` for full enforcement rules
+
 1. **Read all rules first:**
    - `.rules/ai-toolchain.md` - always read (required)
     - `.rules/go-conventions.md` - Go conventions

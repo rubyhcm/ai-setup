@@ -102,12 +102,14 @@ EOF
 
 ### Go version bình thường (go trong PATH)
 
-```bash
-# Bước 1 — Generate coverage
-go test ./... -coverprofile=coverage.out
+> **Token Efficiency:** Wrap commands with `rtk` to reduce output noise. Use `rtk test` for test execution and `rtk build` for scanner output.
 
-# Bước 2 — Chạy scan
-export $(cat .env.local | xargs) && sonar-scanner
+```bash
+# Bước 1 — Generate coverage (RTK: show only results, suppress verbose output)
+rtk test go test ./... -coverprofile=coverage.out
+
+# Bước 2 — Chạy scan (RTK: show only scanner output, suppress info lines)
+export $(cat .env.local | xargs) && rtk build sonar-scanner
 
 # Bước 3 — Tạo report markdown
 python3 scripts/gen_sonar_report.py
@@ -115,19 +117,19 @@ python3 scripts/gen_sonar_report.py
 
 ### Go version quản lý bằng gvm (version mismatch)
 
-Nếu gặp lỗi `compile: version "X.Y.Z" does not match go tool version`, cần chỉ định đúng `GOROOT`:
+> Apply RTK for token efficiency on all commands:
 
 ```bash
 # Xem các version Go có sẵn
-ls ~/.gvm/gos/
+rtk ls ~/.gvm/gos/
 
 # Bước 1 — Generate coverage với đúng Go version
-GOROOT="$HOME/.gvm/gos/go1.25.7" \
+rtk test GOROOT="$HOME/.gvm/gos/go1.25.7" \
 PATH="$HOME/.gvm/gos/go1.25.7/bin:$PATH" \
   go test ./internal/... -coverprofile=coverage.out
 
-# Bước 2 — Chạy scan (sonar-scanner dùng đường dẫn đầy đủ nếu cần)
-export $(cat .env.local | xargs) && /opt/sonar-scanner/bin/sonar-scanner
+# Bước 2 — Chạy scan (with RTK for output compression)
+export $(cat .env.local | xargs) && rtk build /opt/sonar-scanner/bin/sonar-scanner
 
 # Bước 3 — Tạo report markdown
 python3 scripts/gen_sonar_report.py

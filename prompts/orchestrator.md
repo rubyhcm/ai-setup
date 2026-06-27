@@ -32,6 +32,16 @@ IDLE --> PLANNING --> TASKING --> CODING --> SECURITY_SCANNING --> REVIEWING -->
                                    └── lint runs INLINE inside Code/Fix agents
 ```
 
+## AI Toolchain Requirements
+
+This pipeline enforces the mandatory usage of RTK, ICM, and GitNexus at every stage:
+
+- **GitNexus Init:** Before planning or coding, check if `.gitnexus/` exists. If not: `gitnexus init && gitnexus analyze`. Each sub-agent independently verifies this.
+- **RTK:** ALL sub-agents MUST wrap shell commands with `rtk` for token efficiency (enforced in each agent's system prompt).
+- **GitNexus Impact Analysis:** Before refactoring shared interfaces/structs, agents MUST run `gitnexus impact --target <symbol> --direction downstream`.
+- **ICM:** Each sub-agent runs `icm clear` after completing its step to prevent context bloat across the pipeline.
+- See `.rules/ai-toolchain.md` for full enforcement rules.
+
 ## Agent Pipeline
 
 ```

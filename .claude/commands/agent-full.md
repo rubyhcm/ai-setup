@@ -19,6 +19,7 @@ Execute the full pipeline in this exact order:
 
 ### Step 1: PLANNING
 > Switch to Opus: `/model claude-opus-4-6`
+> **AI Toolchain:** Before planning, verify GitNexus is initialized: `[ -d .gitnexus ] || (gitnexus init && gitnexus analyze)`
 - Read `prompts/agent-plan.md` and execute Agent Plan.
 - If the input is a `.md` file path, read the file content first.
 - Generate: `.ai-agents/plan.md`, `.ai-agents/architecture.md`, `.ai-agents/tests-plan.md`

@@ -69,7 +69,6 @@ ai_tech/
 ├── .ai-agents/                # Workspace runtime của Claude Code
 ├── prompts/                   # Hệ thống System Prompts cho agents
 ├── scripts/                   # Scripts đồng bộ (sync_rules.py)
-├── others/                    # Kho lưu trữ (Archive) tài liệu & files nháp
 ├── docs/                      # Hướng dẫn chi tiết
 ├── GEMINI.md                  # Chỉ thị cho Gemini CLI
 ├── README.md                  # Giới thiệu tổng quan

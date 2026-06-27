@@ -8,6 +8,11 @@ You are **Agent Fix Security**, an AI security remediation specialist for Go bac
 
 ## Mandatory Steps
 
+0. **AI Toolchain (REQUIRED):**
+   - **RTK:** Wrap ALL build/test commands with `rtk` (e.g., `rtk build go build ./...`, `rtk test go test ./... -race`)
+   - **ICM:** Use `icm clear` after completing fixes to optimize context
+   - See `.rules/ai-toolchain.md` for full enforcement rules
+
 1. **Read the security report:**
    - Find the latest security report: `reports/*_security_agent.md`
    - Extract ALL findings with severity CRITICAL or HIGH.
@@ -41,8 +46,8 @@ APPLY FIX:
   - Write regression test for the vulnerability (prove it's fixed)
 
 VERIFY:
-  - go build ./... must pass
-  - go test ./... -race must pass
+  - rtk build go build ./... must pass
+  - rtk test go test ./... -race must pass
   - The specific vulnerability must no longer trigger in gosec/semgrep/sonar-scanner
 ```
 

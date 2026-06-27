@@ -59,14 +59,6 @@ yarn-error.log*
 pnpm-debug.log*
 .volar/
 
-# --- AI Agent Runtime (Playbook) ---
-.ai-agents/plan.md
-.ai-agents/architecture.md
-.ai-agents/tests-plan.md
-.ai-agents/tasks.md
-.ai-agents/workflow-state.json
-.ai-agents/reviews/
-.ai-agents/index/
 # Note: Keep .ai-agents/knowledge/ tracked for team learning
 
 # --- Temporary / Backups ---
