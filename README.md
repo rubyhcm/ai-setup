@@ -1,6 +1,6 @@
 # Unified AI Agent Playbook (Cross-Platform)
 
-Repository này là bộ khung hướng dẫn và quản trị tập trung (**Centralized Governance**) dành cho các AI Agents và IDE Assistants. Nó được thiết kế để đồng bộ hóa các quy tắc lập trình, quy chuẩn kiến trúc và bộ công cụ tối ưu (RTK, GitNexus) trên 8+ nền tảng phổ biến nhất hiện nay (Claude, Cursor, Copilot, Kiro, Kilo, Gemini, JetBrains, Antigravity).
+Repository này là bộ khung hướng dẫn và quản trị tập trung (**Centralized Governance**) dành cho các AI Agents và IDE Assistants. Nó được thiết kế để đồng bộ hóa các quy tắc lập trình, quy chuẩn kiến trúc và bộ công cụ tối ưu (RTK, ICM, GitNexus) trên 9+ nền tảng phổ biến nhất hiện nay (Claude, Command Code, Cursor, Copilot, Kiro, Kilo, Gemini, JetBrains, Antigravity).
 
 ## Thành phần chính
 
@@ -16,11 +16,14 @@ Repository này là bộ khung hướng dẫn và quản trị tập trung (**Ce
 - `scripts/` - Scripts tự động hóa (VD: `sync_rules.py` để đồng bộ luật từ `.rules/` sang mọi IDE)
 - `docs/` - Tài liệu hướng dẫn
 - `.ai-agents/` - Nơi lưu artifact của Claude Code trong quá trình làm việc
+- `.commandcode/` - Cấu hình Command Code (taste learning + GitNexus skills)
+- `COMMANDCODE.md` - Project Memory cho Command Code (GitNexus, AI Toolchain, rules)
 
 ## Tài liệu
 
 | File | Mô tả |
 |------|-------|
+| [COMMANDCODE.md](COMMANDCODE.md) | Project Memory cho Command Code (GitNexus + AI Toolchain) |
 | [USER_GUIDE.md](USER_GUIDE.md) | Hướng dẫn sử dụng đầy đủ tất cả agents |
 | [docs/sonarcloud-scan-guide.md](docs/sonarcloud-scan-guide.md) | Hướng dẫn cài đặt và chạy SonarCloud scan |
 | [.kiro/README.md](.kiro/README.md) | Hướng dẫn sử dụng Kiro steering rules và spec |
@@ -50,6 +53,13 @@ Repository này là bộ khung hướng dẫn và quản trị tập trung (**Ce
 2. Copy `.kiro/` sang repo đích.
 3. Mở Kiro IDE, yêu cầu implement theo spec.
 
+### Command Code (taste-driven)
+
+1. Mở repo này trong Command Code: `cmd` (tại thư mục repo).
+2. `COMMANDCODE.md` tự động được đọc — chứa GitNexus + AI Toolchain rules.
+3. Dùng `/skills` để xem GitNexus skills có sẵn.
+4. Chạy `cmd taste learn .` để học preferences từ mã nguồn.
+
 ## Ghi chú
 
 - Không cần `go.mod`, `Makefile`, hoặc binary runtime trong repo playbook này.
@@ -67,10 +77,12 @@ ai_tech/
 ├── .kilo/                     # Kilo CLI rules (auto-generated)
 ├── .kiro/                     # Kiro IDE & CLI steering (auto-generated)
 ├── .ai-agents/                # Workspace runtime của Claude Code
+├── .commandcode/              # Cấu hình Command Code (taste + skills)
 ├── prompts/                   # Hệ thống System Prompts cho agents
 ├── scripts/                   # Scripts đồng bộ (sync_rules.py)
 ├── docs/                      # Hướng dẫn chi tiết
 ├── GEMINI.md                  # Chỉ thị cho Gemini CLI
+├── COMMANDCODE.md             # Project Memory cho Command Code
 ├── README.md                  # Giới thiệu tổng quan
 └── USER_GUIDE.md              # Cẩm nang sử dụng chi tiết
 ```
